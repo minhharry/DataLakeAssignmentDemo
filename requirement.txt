@@ -1,0 +1,10 @@
+Flask
+Flask-Session
+pandas
+open_clip_torch
+deep-translator
+pillow
+opencv-python
+lancedb
+torch
+scenedetect[opencv]

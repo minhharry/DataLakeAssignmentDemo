@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bruh</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function openURL(url) {
+            window.open(url, '_blank');
+        }
+        async function pictureQuery(imageSrc) {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            loadingOverlay.style.display = 'flex';
+
+            const formData = new FormData();
+            const imageFile = await fetch(imageSrc).then(response => response.blob());
+            formData.append('files', imageFile);
+          
+            try {
+                const response = await fetch('/file-query', {
+                    method: 'POST',
+                    body: formData,
+                });
+            
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            
+                window.location.reload();
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        function toggleContent(imageCardId) {
+            const imageCard = document.getElementById(imageCardId);
+            if (imageCard.style.display === 'grid') {
+                imageCard.style.display = 'none';
+            } else {
+                imageCard.style.display = 'grid';
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="loading-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="text-white font-bold text-2xl">LOADING...</div>
+    </div>
+    <div class="container mx-auto p-4 bg-white border-2 border-blue-500 rounded-lg">
+        <!-- Query Input Section -->
+        <div class="mb-6">
+            <form action="{{ url_for('session_clear') }}" method="POST" class="mb-4">
+                <button class="w-full md:w-auto bg-blue-500 text-white px-4 py-3 rounded-md hover:bg-blue-600 transition" type="submit">
+                    Session Data Clear
+                </button>
+            </form>
+            <h1 class="text-xl font-semibold mb-4">Search for Data</h1>
+            <form action="{{ url_for('text_query') }}" method="POST" class="mb-4">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <!-- Main Query Input -->
+                    <input
+                        name="firstQuery"
+                        type="text" 
+                        placeholder="Enter your query" 
+                        class="w-full p-3 border border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                    <input 
+                        name="sqlFilter"
+                        type="text" 
+                        placeholder="Optional SQL filter" 
+                        class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                    <input 
+                        name="numData"
+                        type="number" min="10" max="500" step="10"
+                        value="{{ num_data }}"
+                        class="w-24 p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                    <!-- Search Button -->
+                    <button class="w-full md:w-auto bg-blue-500 text-white px-4 py-3 rounded-md hover:bg-blue-600 transition" type="submit">
+                        Search
+                    </button>
+                </div> 
+            </form>
+            <form action="{{ url_for('file_query') }}" method="POST" enctype="multipart/form-data">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <label for="name" class="font-semibold text-lg">Image query or Text file query:</label>
+                    <input type="file" name="files" class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" multiple>
+                    <button class="w-full md:w-auto bg-blue-500 text-white px-4 py-3 rounded-md hover:bg-blue-600 transition" type="submit">
+                        Search
+                    </button>
+                </div> 
+            </form>
+        </div>
+        {% for query, query_result in data %}
+        <div class="container mx-auto p-4 bg-white border-2 border-blue-500 rounded-lg">
+            <div class="text-lg font-semibold mb-4">{{ query }}</div>
+            <button class="w-full md:w-auto bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition" id="ToggleButton{{ loop.index0 }}" onclick="toggleContent('ImageCard{{ loop.index0 }}')">
+                Toggle Content
+            </button>
+            <!-- Image Card Section -->
+            <div class="grid grid-cols-1" id="ImageCard{{ loop.index0 }}" style="{{ 'display: grid;' if loop.last else 'display: none;' }}">
+                <!-- Image Card 1 -->
+                {% for video_name, image_frame_list in query_result.items() %}
+                <div class="bg-white p-4 m-1 border-2 border-black rounded-lg">
+                    <h2 class="text-lg font-semibold mb-4">{{ video_name }}</h2>
+                    <div class="flex space-x-2 overflow-x-auto">
+                        {% for image, t, text_color in image_frame_list %}
+                        <div class="relative flex-shrink-0">
+                            <img loading="lazy" src="{{ url_for('get_image', path=video_name, image_name=image) }}" class="h-32 rounded-lg">
+                            <div class="{{ text_color }}">{{ t }}</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="openURL('{{ url_for('get_image', path=video_name, image_name=image) }}')" class="bg-blue-500 hover:bg-blue-600 transition text-white p-1 rounded-lg mt-2">Image</button>
+                                <button onclick="pictureQuery('{{ url_for('get_image', path=video_name, image_name=image) }}')" class="bg-blue-500 hover:bg-blue-600 transition text-white p-1 rounded-lg mt-2">Similar</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>     
+</body>
+</html>
