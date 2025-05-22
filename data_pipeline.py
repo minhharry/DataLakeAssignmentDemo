@@ -64,7 +64,7 @@ def seconds_to_hhmmss(seconds):
     return str(time_obj)
 
 if __name__ == '__main__':
-    handle_video_file('input')
+    #handle_video_file('input')
 
     # Load CLIP model
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -72,13 +72,13 @@ if __name__ == '__main__':
     model.to(device)
 
     dataset = KeyframesDataset(preprocess, "output")
-    dataloader = DataLoader(dataset, batch_size=128, shuffle=False, num_workers=11, persistent_workers=True)
+    dataloader = DataLoader(dataset, batch_size=64, shuffle=False, num_workers=11, persistent_workers=True)
     print("Number of images: ", len(dataset))
     print("Number of batches: ", len(dataloader))
 
     # Create lancedb instance
     lancedb_instance = lancedb.connect("database.lance")
-    TABLE_NAME = "patch14v2_openclip"
+    TABLE_NAME = "patch14_openclip"
     if TABLE_NAME in lancedb_instance.table_names():
         database = lancedb_instance[TABLE_NAME]
         print(f"Warning: Table {TABLE_NAME} already exists!")
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     df = pd.DataFrame(columns=['embedding', 'video_name', 'image_name', 'frame_idx', 'path', 'time'])
     for i, (images, video_names, image_names, frame_idxs, paths, fpss) in enumerate(tqdm(dataloader)):
         images = images.to(device)
-        with torch.no_grad(), torch.amp.autocast('cuda'):
+        with torch.no_grad():
             embeddings = model.encode_image(images)
             embeddings /= embeddings.norm(dim=-1, keepdim=True)
             embeddings = embeddings.squeeze().cpu().numpy()

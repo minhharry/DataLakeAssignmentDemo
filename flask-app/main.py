@@ -24,8 +24,8 @@ class LancedbModel():
     def __init__(self) -> None:
         self.lancedb_instance = lancedb.connect("database.lance")
         self.database = {}
-        if "patch14v2_openclip" in self.lancedb_instance.table_names():
-            self.database['openclip'] = self.lancedb_instance["patch14v2_openclip"]
+        if "patch14_openclip" in self.lancedb_instance.table_names():
+            self.database['openclip'] = self.lancedb_instance["patch14_openclip"]
             print(f"Load database success!")
         else:
             print(f"Load database error!")
@@ -133,11 +133,11 @@ def text_query():
     session["num_data"] = num_data
     if sql_filter == "":
         sql_filter = None
-    if first_query != "":
-        first_query = translator.translate(first_query)
     session["DATA"].append([
         f"Query: {first_query}, SQL Filter: {sql_filter} ----------"
     ])
+    if first_query != "":
+        first_query = translator.translate(first_query)
     session["DATA"][-1][0] += f"Query: {first_query}, SQL Filter: {sql_filter}\n"
     DATA = process_text_query(first_query, sql_filter, num_data)
     session["DATA"][-1].append(DATA)
@@ -153,7 +153,7 @@ def file_query():
         if file and file.filename.lower().endswith('.txt'):
             content = file.read().decode('utf-8')
             content_translated = translator.translate(content)
-            DATA = process_text_query(content_translated, "", None, num_data)
+            DATA = process_text_query(content_translated, None, num_data)
             session["DATA"].append([
                 f'Query text file: {file.filename} | {content} | {content_translated}',
                 DATA
